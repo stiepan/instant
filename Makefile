@@ -1,5 +1,5 @@
 all:
-	ghc --make -isrc/:src/grammar src/insc_jvm.hs -o insc_jvm
+	ghc --make -isrc/:src/grammar src/InscJvm.hs -o insc_jvm
 
 clean:
 	-find . -type f -name '*.o' -delete

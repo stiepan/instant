@@ -1,0 +1,23 @@
+--module Jvm where
+--
+--import Data.Text.Lazy.Builder as TB
+--
+--import qualified AbsGrammar as Instant
+--
+--data Program = Class [Procedure] --deriving (Eq, Show)
+--data Procedure = Method Invocation String Type [Type] Stack Locals [Instr] --deriving (Eq, Show)
+--data Stack = Stack Integer --deriving (Eq, Show)
+--data Locals = Locals Integer --deriving (Eq, Show)
+--data Invocation = Virtual | Static | Special --deriving (Eq, Show)
+--data Type = TVoid | TInteger | TBoolean | TClass String | TArray Type --deriving (Eq, Show)
+--data Instr = Push Integer | IAdd | ISub | IMul | IDiv | ILoad Address | IStore Address |
+--             Swap | Dup | Pop | GetStatic String String | Return | Call Procedure --deriving (Eq, Show)
+--data Address = Addr Integer --deriving (Eq, Show, Ord)
+--
+--showProgram (Class [Procedure]) = toLazyText(fromString "aa")
+--
+--instance Show Program where
+--  show (Class ps) = toLazyText (fromString "aa")
+--
+--compile :: Instant.Program -> Program
+--compile _ = Prog
