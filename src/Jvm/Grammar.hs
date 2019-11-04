@@ -2,14 +2,24 @@ module Jvm.Grammar where
 
 import Jvm.AbsInstant
 
-data Program = Class String String Modifier [Member] deriving Show
-data Member = Method Modifier Procedure deriving Show
-data Modifier = Public deriving Show
-data Signature = Sig Invocation String Type [Type] deriving Show
-data Procedure = Proc Signature (Maybe Stack) (Maybe Locals) [Instr] deriving Show
-data Stack = Stack Integer deriving Show
-data Locals = Locals Integer deriving Show
-data Invocation = Virtual | Static | Special deriving Show
-data Type = TVoid | TInteger | TBoolean | TClass String | TArray Type deriving Show
+data Program = Class String String Modifier [Member] deriving (Show, Eq)
+data Member = Method Modifier Procedure deriving (Show, Eq)
+data Modifier = Public deriving (Show, Eq)
+data Signature = Sig {
+  procInv :: Invocation,
+  procName :: String,
+  procRT :: Type,
+  procArgsT :: [Type]
+} deriving (Show, Eq)
+data Procedure = Proc {
+  procSig :: Signature,
+  procStack :: (Maybe Stack),
+  procLocals :: (Maybe Locals),
+  procBody :: [Instr]
+} deriving (Show, Eq)
+data Stack = Stack Integer deriving (Show, Eq)
+data Locals = Locals Integer deriving (Show, Eq)
+data Invocation = Virtual | Static | Special deriving (Show, Eq)
+data Type = TVoid | TInteger | TBoolean | TClass String | TArray Type deriving (Show, Eq)
 data Instr = Push Integer | IAdd | ISub | IMul | IDiv | ILoad Integer | IStore Integer | ALoad Integer |
-             Swap | Dup | Pop | GetStatic String Type | Return | Call Signature deriving Show
+             Swap | Dup | Pop | GetStatic String Type | IReturn | VReturn | Call Signature deriving (Show, Eq)

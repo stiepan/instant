@@ -24,7 +24,8 @@ main = do
 
 
 compileFile :: FilePath -> IO ()
-compileFile f = putStrLn f >> readFile f >>= compile
+compileFile f = readFile f >>= compile
+--compileFile f = putStrLn f >> readFile f >>= compile
 
 
 compile :: String -> IO ()
@@ -36,15 +37,7 @@ compile programText =
       exitFailure
     Ok tree -> do
       putStrLn $ PrintJvm.showProg $ Jvm.compileP tree
---      showTree tree
       exitSuccess
-
-
---showTree :: (Show a, Print a) => a -> IO ()
---showTree tree
--- = do
---      putStrLn $ "\n[Abstract Syntax]\n\n" ++ show tree
---      putStrLn $ "\n[Linearized tree]\n\n" ++ printTree tree
 
 
 usage :: IO ()

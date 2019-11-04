@@ -52,42 +52,41 @@ getM var = do
 
 compileP :: Instant.Program -> Program
 compileP (Instant.Prog stmts) =
-  Class "Main" "java/lang/Object" Public [stdInitializer, mainMethod s ls insts]
+  Class "Main" "java/lang/Object" Public [stdInitializer, mainMethod]
   where
   (localsCount, insts) = compileBlock stmts
-  ls = (Locals localsCount)
-  s = (Stack 0)
 
   stdInitializer :: Member
   stdInitializer = Method Public (Proc initializerSig Nothing Nothing instructions)
     where
     initializerSig = Sig Virtual "<init>" TVoid []
-    instructions = [ALoad 0, Call objInit, Return]
-    objInit = Sig Virtual "java/lang/Object/<init>" TVoid []
+    instructions = [ALoad 0, Call objInit, VReturn]
+    objInit = Sig Special "java/lang/Object/<init>" TVoid []
 
-  mainMethod :: Stack -> Locals -> Instructions -> Member
-  mainMethod (Stack n) ls instrs =
-    Method Public (Proc mainSig stack (Just ls) (toList body))
+  mainMethod :: Member
+  mainMethod = Method Public (Proc mainSig stack locals body)
     where
-    body = (singleton getStream) `mappend` instrs `mappend` (singleton Return)
-    stack = Just (Stack (n + 1))
+    body = toList $ insts `mappend` (singleton VReturn)
+    stack = Just (Stack 10)
+    locals = Just (Locals localsCount)
     mainSig = Sig Static "main" TVoid [(TArray (TClass "java/lang/String"))]
-    getStream = GetStatic "java/lang/System/out" (TClass "java/io/PrintStream")
 
 
 compileBlock :: [Instant.Stmt] -> (Integer, Instructions)
 compileBlock ss = ((freeLocal env) + 1, instructions)
   where
 --  ((_, instructions), env) = runState (runWriterT $ sequence (map compileS ss)) (Env Map.empty 0)
-  ((_, instructions), env) = runState (runWriterT $ mapM compileS ss) (Env Map.empty 0)
+  ((_, instructions), env) = runState (runWriterT $ mapM_ compileS ss) (Env Map.empty 0)
 
 
 compileS :: Instant.Stmt -> Compilation ()
 compileS (Instant.SExp e) = do
+  emit getStatic
   compileE e
   emit $ Call printMethod
   where
   printMethod = Sig Virtual "java/io/PrintStream/println" TVoid [TInteger]
+  getStatic = GetStatic "java/lang/System/out" (TClass "java/io/PrintStream")
 
 compileS (Instant.SAss var e) = do
   compileE e
