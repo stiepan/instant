@@ -1,8 +1,8 @@
 module Jvm.Grammar where
 
-import qualified AbsGrammar as Instant
+import Jvm.AbsInstant
 
-data Program = Class Modifier [Member] deriving Show
+data Program = Class String String Modifier [Member] deriving Show
 data Member = Method Modifier Procedure deriving Show
 data Modifier = Public deriving Show
 data Signature = Sig Invocation String Type [Type] deriving Show

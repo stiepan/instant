@@ -1,6 +1,7 @@
 *.o
 *.hi
 .idea/
+lib/
 tests/
 insc_jvm
 insc_llvm

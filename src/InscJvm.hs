@@ -12,6 +12,7 @@ import AbsGrammar
 import ErrM
 
 import qualified Jvm.Compile as Jvm
+import qualified Jvm.Print as PrintJvm
 
 
 main :: IO ()
@@ -34,7 +35,7 @@ compile programText =
       putStrLn programText
       exitFailure
     Ok tree -> do
-      putStrLn $ show $ Jvm.compile tree
+      putStrLn $ PrintJvm.showProg $ Jvm.compileP tree
 --      showTree tree
       exitSuccess
 
