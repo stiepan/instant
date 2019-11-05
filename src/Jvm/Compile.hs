@@ -52,12 +52,12 @@ getM var = do
   case Map.lookup var (bindings env) of Just location -> return location
 
 
-compileP :: InstantG.Program -> Program
-compileP p = compileProgram (Instant.toAbsProgram p)
+compileP :: InstantG.Program -> String -> Program
+compileP p baseName = compileProgram (Instant.toAbsProgram p) baseName
 
-compileProgram :: Instant.Program -> Program
-compileProgram (Instant.Prog stmts) =
-  Class "Main" "java/lang/Object" Public [stdInitializer, mainMethod]
+compileProgram :: Instant.Program -> String -> Program
+compileProgram (Instant.Prog stmts) baseName =
+  Class baseName "java/lang/Object" Public [stdInitializer, mainMethod]
   where
   (stackSize, localsCount, insts) = compileBlock stmts
 

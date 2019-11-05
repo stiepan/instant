@@ -3,6 +3,12 @@ module Main where
 
 import System.Environment ( getArgs )
 import System.Exit ( exitFailure, exitSuccess )
+import System.IO (writeFile)
+import System.FilePath.Posix (takeExtension, takeBaseName, dropExtension, takeDirectory)
+import System.Process (system)
+import System.Exit (ExitCode(ExitFailure, ExitSuccess))
+
+import Control.Monad (when)
 
 import LexGrammar
 import ParGrammar
@@ -24,20 +30,39 @@ main = do
 
 
 compileFile :: FilePath -> IO ()
-compileFile f = readFile f >>= compile
---compileFile f = putStrLn f >> readFile f >>= compile
+compileFile f = do
+  when ((takeExtension f) /= ".ins")
+    (putStrLn "Incorrect file extension - expected .ins" >> exitFailure)
+  let baseName = takeBaseName f
+  when (baseName == "")
+    (putStrLn "Filename cannot be empty" >> exitFailure)
+  source <- readFile f
+  code <- compile source baseName
+  let dir = takeDirectory f
+  let droppedExt = dropExtension f
+  let newFileName = droppedExt ++ ".j"
+  let classFName = dir ++ "/" ++ baseName ++ ".class"
+  writeFile newFileName code
+  putStrLn $ newFileName ++ " has been created"
+  retCode <- system $ "java -jar lib/jasmin.jar " ++ newFileName ++ " -d " ++ dir
+  case retCode of
+    (ExitFailure errCode) -> do
+      putStrLn $ "jasmin failed with ret code: " ++ (show errCode)
+      exitFailure
+    _ -> do
+      putStrLn $ classFName ++ " has been created"
+      exitSuccess
 
 
-compile :: String -> IO ()
-compile programText =
+compile :: String -> String -> IO String
+compile programText baseName =
   case pProgram (myLexer programText) of
     Bad s -> do
       putStrLn "\nParsing failed\n"
       putStrLn programText
       exitFailure
     Ok tree -> do
-      putStrLn $ PrintJvm.showProg $ Jvm.compileP tree
-      exitSuccess
+      return $ PrintJvm.showProg $ Jvm.compileP tree baseName
 
 
 usage :: IO ()
