@@ -7,7 +7,8 @@ import Control.Monad.Trans.Writer
 import Data.Functor.Identity
 import Jvm.Grammar
 import DList
-import qualified AbsGrammar as Instant
+import qualified AbsGrammar as InstantG
+import qualified Jvm.AbsInstant as Instant
 
 data Env = Env {
   -- maps variables to local variables array indices
@@ -50,11 +51,15 @@ getM var = do
   env <- lift get
   case Map.lookup var (bindings env) of Just location -> return location
 
-compileP :: Instant.Program -> Program
-compileP (Instant.Prog stmts) =
+
+compileP :: InstantG.Program -> Program
+compileP p = compileProgram (Instant.toAbsProgram p)
+
+compileProgram :: Instant.Program -> Program
+compileProgram (Instant.Prog stmts) =
   Class "Main" "java/lang/Object" Public [stdInitializer, mainMethod]
   where
-  (localsCount, insts) = compileBlock stmts
+  (stackSize, localsCount, insts) = compileBlock stmts
 
   stdInitializer :: Member
   stdInitializer = Method Public (Proc initializerSig Nothing Nothing instructions)
@@ -67,50 +72,67 @@ compileP (Instant.Prog stmts) =
   mainMethod = Method Public (Proc mainSig stack locals body)
     where
     body = toList $ insts `mappend` (singleton VReturn)
-    stack = Just (Stack 10)
+    stack = Just (Stack stackSize)
     locals = Just (Locals localsCount)
     mainSig = Sig Static "main" TVoid [(TArray (TClass "java/lang/String"))]
 
 
-compileBlock :: [Instant.Stmt] -> (Integer, Instructions)
-compileBlock ss = ((freeLocal env) + 1, instructions)
+compileBlock :: [Instant.Stmt] -> (Integer, Integer, Instructions)
+compileBlock ss = (stackSize, (freeLocal env) + 1, instructions)
   where
---  ((_, instructions), env) = runState (runWriterT $ sequence (map compileS ss)) (Env Map.empty 0)
-  ((_, instructions), env) = runState (runWriterT $ mapM_ compileS ss) (Env Map.empty 0)
+  ((stackSizes, instructions), env) = runState (runWriterT $ mapM compileS ss) (Env Map.empty 0)
+  stackSize = case stackSizes of
+    [] -> 0
+    ss -> foldr1 max ss
 
 
-compileS :: Instant.Stmt -> Compilation ()
+compileS :: Instant.Stmt -> Compilation Integer
 compileS (Instant.SExp e) = do
   emit getStatic
-  compileE e
+  stackSize <- compileE e
   emit $ Call printMethod
+  return (stackSize + 1)
   where
   printMethod = Sig Virtual "java/io/PrintStream/println" TVoid [TInteger]
   getStatic = GetStatic "java/lang/System/out" (TClass "java/io/PrintStream")
 
 compileS (Instant.SAss var e) = do
-  compileE e
+  stackSize <- compileE e
   location <- getOrAllocM var
   emit $ IStore location
+  return stackSize
 
 
-compileE :: Instant.Exp -> Compilation ()
-compileE (Instant.ExpLit n) = emit $ Push n
+compileE :: Instant.Exp -> Compilation Integer
+compileE (Instant.ExpLit s n) = do
+  emit $ Push n
+  return s
 
-compileE (Instant.ExpVar var) = do
+compileE (Instant.ExpVar s var) = do
   location <- getM var
   emit $ ILoad location
+  return s
 
-compileE (Instant.ExpAdd el er) = compileBOp IAdd el er
+compileE (Instant.ExpAdd s el er) = compileBOp s IAdd el er
 
-compileE (Instant.ExpMul el er) = compileBOp IMul el er
+compileE (Instant.ExpMul s el er) = compileBOp s IMul el er
 
-compileE (Instant.ExpSub el er) = compileBOp ISub el er
+compileE (Instant.ExpSub s el er) = compileBOp s ISub el er
 
-compileE (Instant.ExpDiv el er) = compileBOp IDiv el er
+compileE (Instant.ExpDiv s el er) = compileBOp s IDiv el er
 
-compileBOp :: Instr -> Instant.Exp -> Instant.Exp -> Compilation ()
-compileBOp opcode el er = do
-  compileE el
-  compileE er
+compileBOp :: Integer -> Instr -> Instant.Exp -> Instant.Exp -> Compilation Integer
+compileBOp s opcode el er = do
+  if (Instant.stack el) >= (Instant.stack er) then do
+    compileE el
+    compileE er
+    return ()
+  else do
+    compileE er
+    compileE el
+    if opcode `elem` [ISub, IDiv] then
+      emit Swap
+    else
+      return ()
   emit opcode
+  return s
