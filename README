@@ -1,0 +1,13 @@
+Makefile pozwala zgodnie z treścią utworzyć oba kompilatory dla jvm i llvm.
+
+Kompilator llvm używa nowej składni dla load.
+
+Kompilator jvm optymalizuje wielkość stosu.
+
+Oba kompilatory oczekują w katalogu z którego są wywołane obecności katalogu lib:
+ * Jvm oczekuje tam jasmin.jar
+ * LLvm oczekuje runtime.bc - pliku z laboratoriów z definicją procedury printInt
+
+Kompilowany GHC 8.0.2
+
+Na students kompiluje się przy użyciu ghc-7.10.1

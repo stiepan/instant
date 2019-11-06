@@ -92,9 +92,9 @@ printInstr (Add (Reg t name) lv rv) = printBOp "add" name t lv rv
 
 printInstr (Sub (Reg t name) lv rv) = printBOp "sub" name t lv rv
 
-printInstr (Mul (Reg t name) lv rv) = printBOp "div" name t lv rv
+printInstr (Mul (Reg t name) lv rv) = printBOp "mul" name t lv rv
 
-printInstr (Div (Reg t name) lv rv) = printBOp "mul" name t lv rv
+printInstr (Div (Reg t name) lv rv) = printBOp "sdiv" name t lv rv
 
 printInstr (Store v (Reg t name)) = do
   emit "store "
