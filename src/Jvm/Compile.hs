@@ -53,7 +53,7 @@ getM var = do
 
 
 compileP :: InstantG.Program -> String -> Program
-compileP p baseName = compileProgram (Instant.toAbsProgram p) baseName
+compileP p baseName = compileProgram (Instant.optimizeProgram p) baseName
 
 compileProgram :: Instant.Program -> String -> Program
 compileProgram (Instant.Prog stmts) baseName =
@@ -104,14 +104,14 @@ compileS (Instant.SAss var e) = do
 
 
 compileE :: Instant.Exp -> Compilation Integer
-compileE (Instant.ExpLit s n) = do
+compileE (Instant.ExpLit n) = do
   emit $ Push n
-  return s
+  return 1
 
-compileE (Instant.ExpVar s var) = do
+compileE (Instant.ExpVar var) = do
   location <- getM var
   emit $ ILoad location
-  return s
+  return 1
 
 compileE (Instant.ExpAdd s el er) = compileBOp s IAdd el er
 
@@ -121,18 +121,19 @@ compileE (Instant.ExpSub s el er) = compileBOp s ISub el er
 
 compileE (Instant.ExpDiv s el er) = compileBOp s IDiv el er
 
-compileBOp :: Integer -> Instr -> Instant.Exp -> Instant.Exp -> Compilation Integer
-compileBOp s opcode el er = do
-  if (Instant.stack el) >= (Instant.stack er) then do
-    compileE el
-    compileE er
-    return ()
+compileBOp :: Bool -> Instr -> Instant.Exp -> Instant.Exp -> Compilation Integer
+compileBOp isSwapped opcode el er =
+  if not isSwapped then do
+    sl <- compileE el
+    sr <- compileE er
+    emit opcode
+    return $ max sl (sr + 1)
   else do
-    compileE er
-    compileE el
-    if opcode `elem` [ISub, IDiv] then
+    sr <- compileE er
+    sl <- compileE el
+    if opcode `elem` [ISub, IDiv] then do
       emit Swap
-    else
-      return ()
-  emit opcode
-  return s
+      emit opcode
+    else do
+      emit opcode
+    return $ max sr (sl + 1)
