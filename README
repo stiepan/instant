@@ -1,13 +1,10 @@
-Makefile pozwala zgodnie z treścią utworzyć oba kompilatory dla jvm i llvm.
+Compiler for arithmetic expressions with variables 
+for jvm (with stack usage optimised) and for llvm.
 
-Kompilator llvm używa nowej składni dla load.
+Requires in ./lib/ presence of
+ * Jvm - jasmin.jar
+ * LLvm - runtime.bc - with the definition of printInt
 
-Kompilator jvm optymalizuje wielkość stosu.
+Haskell
+GHC 8.0.2
 
-Oba kompilatory oczekują w katalogu z którego są wywołane obecności katalogu lib:
- * Jvm oczekuje tam jasmin.jar
- * LLvm oczekuje runtime.bc - pliku z laboratoriów z definicją procedury printInt
-
-Kompilowany GHC 8.0.2
-
-Na students kompiluje się przy użyciu ghc-7.10.1
